@@ -105,6 +105,88 @@ class Poly:
     >>> print(Poly([1, 0, 2]))
     2x**2 + 1
     '''
+
+
+    def __init__(self, coeffs):
+        self.coeffs = list(coeffs)
+        if not self.coeffs:
+            self.coeffs = [0]
+        while len(self.coeffs) > 1 and self.coeffs[-1] == 0:
+            self.coeffs.pop()
+    def __repr__(self):
+        return f"Poly({self.coeffs})"
+    def __call__(self, x):
+        return self.eval_horner(x)
+    def __str__(self):
+        result = ""
+        for i in range(len(self.coeffs) - 1, -1, -1):
+            c = self.coeffs[i]
+            if c != 0:
+                if i == 0:
+                    term = f"{abs(c)}"
+                elif i == 1:
+                    if abs(c) == 1:
+                        term = "x"
+                    else:
+                        term = f"{abs(c)}x"
+                else:
+                    if abs(c) == 1:
+                        term = f"x**{i}"
+                    else:
+                        term = f"{abs(c)}x**{i}"
+                if result == "":
+                    if c < 0:
+                        result = "-" + term
+                    else:
+                        result = term
+                elif c < 0:
+                    result += " - " + term
+                else:
+                    result += " + " + term
+        if result == "":
+            return "0"
+        return result
+    def __eq__(self, other):
+        if not isinstance(other, Poly):
+            return False
+        return self.coeffs == other.coeffs
+    def __neg__(self):
+        return Poly([-c for c in self.coeffs])
+    def __add__(self, other):
+        result = []
+        for i in range(max(len(self.coeffs), len(other.coeffs))):
+            a = self.coeffs[i] if i < len(self.coeffs) else 0
+            b = other.coeffs[i] if i < len(other.coeffs) else 0
+            result.append(a+b)
+        return Poly(result)
+    def __sub__(self, other):
+        return self + (-other)
+    def __mul__(self, other):
+        return self.mul_naive(other)
+    def derivative(self):
+        result = []
+        for i in range(1, len(self.coeffs)):
+            result.append(i * self.coeffs[i])
+        return Poly(result)
+    def __pow__(self, n):
+        if not isinstance(n, int) or n < 0:
+            raise ValueError
+        result = Poly([1])
+        for i in range(n):
+            result = result * self
+        return result
+    def __iadd__(self, other):
+        self.coeffs = (self + other).coeffs
+        return self
+    def __isub__(self, other):
+        self.coeffs = (self - other).coeffs
+        return self
+    def __imul__(self, other):
+        self.coeffs = (self * other).coeffs
+        return self
+    def __ipow__(self, n):
+        self.coeffs = (self ** n).coeffs
+        return self
     def eval_naive(self, x):
         '''
         Evaluate by summing a_i * x**i one term at a time.  The
@@ -155,6 +237,8 @@ class Poly:
                 out[i + j] += ai * bj
         return Poly(out)
 
+    def mul_karatsuba(self, other):
+        return Poly(_karatsuba(self.coeffs, other.coeffs))
 
 def _karatsuba(a, b):
     '''
@@ -179,3 +263,33 @@ def _karatsuba(a, b):
     >>> _karatsuba([0], [1, 2, 3])
     [0, 0, 0]
     '''
+    if len(a) == 0 or len(b) == 0:
+        return [0]
+    if len(a) == 1 and len(b) == 1:
+        return [a[0] * b[0]]
+    out_len = len(a) + len(b) - 1
+    n = max(len(a), len(b))
+    if n % 2 != 0:
+        n += 1
+    a = a + [0] * (n - len(a))
+    b = b + [0] * (n - len(b))
+    m = n // 2
+    a0 = a[:m]
+    a1 = a[m:]
+    b0 = b[:m]
+    b1 = b[m:]
+    z0 = _karatsuba(a0, b0)
+    z2 = _karatsuba(a1, b1)
+    a_sum = [a0[i] + a1[i] for i in range(m)]
+    b_sum = [b0[i] + b1[i] for i in range(m)]
+    z1 = _karatsuba(a_sum, b_sum)
+    result = [0] * (2 * n - 1)
+    for i in range(len(z0)):
+        result[i] += z0[i]
+        result[i + m] -= z0[i]
+    for i in range(len(z2)):
+        result[i + 2 * m] += z2[i]
+        result[i + m] -= z2[i]
+    for i in range(len(z1)):
+        result[i + m] += z1[i]
+    return result[:out_len]
