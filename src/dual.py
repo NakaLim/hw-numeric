@@ -106,6 +106,7 @@ Dual(v=1.0, d=1.0)
 import math
 from dataclasses import dataclass
 
+
 @dataclass
 class Dual:
     '''
@@ -138,36 +139,44 @@ class Dual:
     v: object
     d: object
 
-
     def __add__(self, other):
         if isinstance(other, Dual):
             return Dual(v=self.v + other.v, d=self.d + other.d)
         else:
             return Dual(v=self.v + other, d=self.d)
+
     def __mul__(self, other):
         if isinstance(other, Dual):
             return Dual(v=self.v * other.v, d=self.d * other.v + self.v * other.d)
         return Dual(v=self.v * other, d=self.d * other)
+
     def __rmul__(self, other):
         return self * other
+
     def __neg__(self):
         return Dual(v=-self.v, d=-self.d)
+
     def __sub__(self, other):
         if isinstance(other, Dual):
             return Dual(v=self.v - other.v, d=self.d - other.d)
         else:
             return Dual(v=self.v - other, d=self.d)
+
     def __rsub__(self, other):
         return Dual(v=other - self.v, d=-self.d)
+
     def __radd__(self, other):
         return self + other
+
     def __truediv__(self, other):
         if isinstance(other, Dual):
             return Dual(v=self.v / other.v, d=(self.d * other.v - self.v * other.d) / (other.v ** 2))
         else:
             return Dual(v=self.v / other, d=self.d / other)
+
     def __rtruediv__(self, other):
         return Dual(v=other / self.v, d=-other * self.d / (self.v ** 2))
+
     def __pow__(self, other):
         if isinstance(other, Dual):
             other = other.v
@@ -175,8 +184,10 @@ class Dual:
             return Dual(1.0, 0.0)
         else:
             return Dual(self.v ** other, other * self.v ** (other - 1) * self.d)
+ 
     def __hash__(self):
         return hash((self.v, self.d))
+
     def __str__(self):
         return f"{self.v} + {self.d}ε"
 
@@ -219,6 +230,7 @@ def tanh(x):
         tanh = math.tanh(x.v)
         return Dual(tanh, (1 - tanh**2) * x.d)
     return math.tanh(x)
+
 
 def exp(x):
     '''
