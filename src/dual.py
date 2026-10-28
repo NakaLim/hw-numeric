@@ -184,7 +184,7 @@ class Dual:
             return Dual(1.0, 0.0)
         else:
             return Dual(self.v ** other, other * self.v ** (other - 1) * self.d)
- 
+
     def __hash__(self):
         return hash((self.v, self.d))
 
